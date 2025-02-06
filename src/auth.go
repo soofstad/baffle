@@ -33,11 +33,11 @@ func exchangeCodeForToken(code string) (string, error) {
 		log.Fatalf("Error reading response body: %v", err)
 	}
 
-	log.Println("Token response:", string(body))
+	log.Print("Successfully exchanged code for token")
 	return string(body), nil
 }
 
-func redirectToAuthenticate(w http.ResponseWriter, r *http.Request) {
+func redirectToAuthenticate(w http.ResponseWriter, r *http.Request, originalUri string) {
 	req, err := http.NewRequest("GET", config.AuthenticationEndpoint, nil)
 	if err != nil {
 		log.Fatal("Error creating authorization request: ", err)
@@ -48,12 +48,11 @@ func redirectToAuthenticate(w http.ResponseWriter, r *http.Request) {
 	query.Add("redirect_uri", config.RedirectURI)
 	query.Add("response_mode", "query")
 	query.Add("scope", config.Scope)
-	// TODO: state and nonce from config/generated
-	query.Add("state", "12345")
+	query.Add("state", originalUri)
+	// TODO: nonce from config/generated
 	query.Add("nonce", "678910")
 
 	req.URL.RawQuery = query.Encode()
 
-	// Redirect the user to the Azure AD login page
 	http.Redirect(w, r, req.URL.String(), http.StatusFound)
 }

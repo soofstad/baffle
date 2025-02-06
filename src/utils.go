@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -9,17 +9,6 @@ import (
 )
 
 var config *Config
-
-type Config struct {
-	ClientSecret           string
-	ClientID               string
-	TokenEndpoint          string
-	AuthenticationEndpoint string
-	RedirectURI            string
-	Scope                  string
-	CookieName             string
-	HostWhiteListPaths     map[string]string
-}
 
 func getEnv[T string | int64](key string, defaultValue ...string) T {
 	var result T
@@ -48,7 +37,7 @@ func getEnv[T string | int64](key string, defaultValue ...string) T {
 }
 
 func loadConfig() *Config {
-	rawHostWhiteListPaths := getEnv[string]("HOST_WHITELIST_PATHS", "")
+	rawHostWhiteListPaths := getEnv[string]("PATH_BACKEND_MAPPING", "")
 	if rawHostWhiteListPaths == "" {
 		log.Fatal("No whitelisted backend hosts found. The BFF can't possibly work.")
 	}
@@ -70,7 +59,7 @@ func loadConfig() *Config {
 		RedirectURI:            getEnv[string]("REDIRECT_URI"),
 		Scope:                  getEnv[string]("SCOPE"),
 		CookieName:             getEnv[string]("COOKIE_NAME", "session"),
-		HostWhiteListPaths:     hostWhiteListPaths,
+		PathBackendMapping:     hostWhiteListPaths,
 	}
 	return config
 }
@@ -79,10 +68,10 @@ func getProxyTargetFromPath(path string) (string, error) {
 	trimmedPath := strings.Trim(path, "/")
 	pathParts := strings.SplitN(trimmedPath, "/", 2)
 	alias := pathParts[0]
-	backend, exists := config.HostWhiteListPaths[alias]
+	backend, exists := config.PathBackendMapping[alias]
 	if !exists {
-		log.Print("ERROR: No configured backend found for alias" + alias)
-		return "", errors.New("No configured backend found for alias " + alias)
+		log.Printf("ERROR: No configured backend found for alias '%s'", alias)
+		return "", fmt.Errorf("ERROR: No configured backend found for alias '%s'", alias)
 	}
 	targetPath := strings.Join(pathParts[1:], "/")
 	backend = strings.Trim(backend, "/")

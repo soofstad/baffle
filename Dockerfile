@@ -5,4 +5,5 @@ RUN go build -o goatbff .
 
 FROM alpine:latest AS prod
 COPY --from=builder /app/src/goatbff /app/goatbff
+USER 1000
 ENTRYPOINT ["/app/goatbff"]
