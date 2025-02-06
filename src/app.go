@@ -61,9 +61,14 @@ func authProxy(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO: Validate cookie
 	log.Print("INFO: User is authenticated")
+	backend, error := getProxyTargetFromPath(r.URL.String())
+	if error != nil {
+		http.Error(w, "Error getting backend: "+error.Error(), http.StatusBadRequest)
+		return
+	}
 	log.Printf("INFO: Proxying request to %s", r.URL.String())
 	// TODO: Set auth header and copy all other headers
-	proxyRequest, err := http.NewRequest(r.Method, "http://127.0.0.1:80"+r.URL.String(), r.Body)
+	proxyRequest, err := http.NewRequest(r.Method, backend, r.Body)
 	resp, err := http.DefaultTransport.RoundTrip(proxyRequest)
 	if err != nil {
 		log.Print("ERROR: Error creating proxy request: ", err)
